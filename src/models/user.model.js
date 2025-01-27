@@ -85,7 +85,4 @@ userSchema.methods.generateRefreshToken = function(){
       )
 }
 
-
-videoSchema.plugins(mongooseAggregatePaginate)
-
 export const User = mongoose.model("User",userSchema)

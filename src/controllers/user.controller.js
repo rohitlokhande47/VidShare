@@ -16,22 +16,22 @@ const registerUser = asyncHandler(async (req,res) =>{
     throw new ApiError(400,"All fields are required")
    }
    //check if user already exists:username and email
-  const existedUser = User.findOne({$or:[{username},{email}]})
+  const existedUser = await User.findOne({$or:[{username},{email}]})
   console.log(existedUser)
 
   if(existedUser){
     throw new ApiError(409,"username with similar username or email already exits")
   }
    //check for image check for avatar
-   const avatarLocalpath = req.file?.avatar[0]?.path;
-   const converImageLocalpath = req.file?.coverImage[0].path;
+   const avatarLocalPath = req.files?.avatar[0]?.path;
+   const coverImageLocalPath = req.files?.coverImage[0]?.path;
 
-   if(!avatarLocalpath){
-    throw new ApiError(400,"Avatar file is required")
+   if(!avatarLocalPath){
+     throw new ApiError(400,"Avatar file is required")
    }
    //upload to cloudinary
-    const avatar = await uplaodOnCloudinary(avatarLocalpath)
-    const coverImage = await uplaodOnCloudinary(converImageLocalpath)
+    const avatar = await uplaodOnCloudinary(avatarLocalPath)
+    const coverImage = await uplaodOnCloudinary(coverImageLocalPath)
 
     if(!avatar){
         throw new ApiError(400,"Avatar file not found")
@@ -47,9 +47,6 @@ const registerUser = asyncHandler(async (req,res) =>{
     username: username.toLowerCase()
 
    })
-
-  
-
   
    //remove password and refresh token field from respones
    const createdUser= await User.findById(user._id).select(
