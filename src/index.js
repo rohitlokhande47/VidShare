@@ -1,8 +1,8 @@
 //require('dotenv').config({path: '.env'})
 import mongoose from "mongoose";
 import connectDB from "./db/db.js";
+import {app} from './app.js'
 import dotenv from "dotenv"
-
 
 dotenv.config({
     path:'./env'
@@ -16,6 +16,14 @@ connectDB()
 .catch((error) =>{
     console.log("mongodb connection failed !!", error)
 })
+
+
+
+
+
+
+
+
 
 
 /*
