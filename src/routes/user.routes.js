@@ -8,7 +8,8 @@ import { changeCurrentUserPassword,
      getWatchHistory, 
      refershAccessToken, 
      updateAccountDetails,
-      updateAvatar }
+      updateAvatar, 
+      updateCoverImage}
        from "../controllers/user.controller.js";
 import {loginUser, logoutUser, registerUser} from "../controllers/user.controller.js"
 import { verifyJWT } from "../middlewares/auth.middleware.js";
@@ -40,7 +41,7 @@ router.route("/update-account").patch(verifyJWT,updateAccountDetails)
 
 router.route("/update-Avatar").patch(verifyJWT,upload.single("avatar"),updateAvatar)
 
-router.route("/update-coverImage").patch(verifyJWT,upload.single("coverImage"),updateAvatar)
+router.route("/update-coverImage").patch(verifyJWT,upload.single("coverImage"),updateCoverImage)
 
 router.route("/c/:username").get(verifyJWT,getUserchannelProfile)
 

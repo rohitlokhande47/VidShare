@@ -54,7 +54,7 @@ const registerUser = asyncHandler(async (req,res) =>{
         throw new ApiError(400,"Avatar file not found")
     }
 
-   //create user object-create entry in dbc
+   //create user object-create entry in db
   const user = await User.create({
     fullname,
     avatar:avatar.url,
@@ -136,8 +136,8 @@ const logoutUser = asyncHandler(async(req,res) =>{
    await User.findByIdAndUpdate(
         req.user._id,
         {
-            $set:{
-                refershToken:undefined
+            $unset:{
+                refershToken:1
             }
         },
        { 
@@ -203,14 +203,21 @@ const refershAccessToken = asyncHandler(async(req,res) => {
 })
 
 const changeCurrentUserPassword =asyncHandler(async(req,res) =>{
-    const{oldpassword,newpassword}=req.body
-    const user = await User.findById(req.user?._id)
-    const isPasswordCorrect = await User.isPasswordCorrect(oldpassword)
-    if(!isPasswordCorrect){
-        throw ApiError(400,"invalid old password")
+    const{oldPassword,newPassword}=req.body
+
+    if(!oldPassword || !newPassword) {
+        throw new ApiError(400, "Both old and new password are required")
     }
 
-    user.password = newpassword
+    const user = await User.findById(req.user?._id)
+
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword)
+
+    if(!isPasswordCorrect){
+        throw new ApiError(400,"invalid old password")
+    }
+
+    user.password = newPassword
     await user.save({validateBeforeSave:false})
 
     return res.status(200).json(new ApiResponse(200,{},"password changed successfully"))
@@ -219,26 +226,30 @@ const changeCurrentUserPassword =asyncHandler(async(req,res) =>{
 const getCurrentuser = asyncHandler(async(req,res) =>{
     return res.
     status(200).
-    json(ApiResponse (200,req.user,"current user fetched successfully")) 
+    json( new ApiResponse (200,req.user,"current user fetched successfully")) 
 })
 
-const updateAccountDetails = asyncHandler((req,res)=>{
+const updateAccountDetails = asyncHandler(async(req,res)=>{
 
-    const {fullname,email} = res.body
+    const {fullname,email} = req.body
     if(!fullname && !email){
-        throw ApiError(400,"all fields are required")
+        throw new ApiError(400,"all fields are required")
     }
-   const user =  User.findByIdAndUpdate(
+   const user = await User.findByIdAndUpdate(
         req.user?._id,
     {
         $set:{
             fullname,
-            email:email,
+            email,
 
         }
     },
         {new:true}
-).select("-password")
+).select("-password -refreshToken")
+
+if(!user){
+    throw new ApiError(404,"User not found")
+}
 
 return res.status(200)
 .json(new ApiResponse(200,user,"Account detail updated successfully"))
@@ -249,20 +260,20 @@ const updateAvatar = asyncHandler(async(req,res) => {
     const avatarlocalpath = req.file?.path
 
     if(!avatarlocalpath){
-        throw ApiError(400,"avatar file not found")
+        throw new ApiError(400,"avatar file not found")
     }
 
-    uplaodOnCloudinary(avatarlocalpath)
+    const avatarImage = await uplaodOnCloudinary(avatarlocalpath)
 
-    if(!avatar.url){
-        throw ApiError(400,"error while updating avatar")
+    if(!avatarImage?.url){
+        throw new ApiError(400,"error while updating avatar")
     }
 
-    const user = await user.findByIdAndUpdate(
+    const user = await User.findByIdAndUpdate(
         req.user?._id,
         {
             $set:{
-            avatar: avatar.url
+            avatar: avatarImage.url
             }
         },
         {new:true}
@@ -277,16 +288,16 @@ const updateAvatar = asyncHandler(async(req,res) => {
 
 const updateCoverImage = asyncHandler(async(req,res) => {
 
-    const avatarlocalpath = req.file?.path
+    const coverImageLocalPath = req.file?.path
 
-    if(!updateCoverImagelocalpath){
-        throw ApiError(400," Cover Image file not found")
+    if(!coverImageLocalPath){
+        throw new ApiError(400," Cover Image file not found")
     }
 
-    uplaodOnCloudinary(updateCoverImagelocalpath)
+   const coverImage = await uplaodOnCloudinary(updateCoverImagelocalpath)
 
     if(!coverImage.url){
-        throw ApiError(400,"error while updating avatar")
+        throw new ApiError(400,"error while updating avatar")
     }
 
    const user = await user.findByIdAndUpdate(
@@ -378,7 +389,7 @@ const getWatchHistory = asyncHandler(async (req,res) =>{
     const user = await User.aggregate([
         {
             $match:{
-            _id:mongoose.Types.ObjectId(req.user._id)
+            _id:new mongoose.Types.ObjectId(req.user._id)
         }
         },
         {
