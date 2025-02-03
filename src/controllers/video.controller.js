@@ -225,7 +225,7 @@ const updateVideo = await Video.findByIdAndUpdate(
     videoId,
     {
         $set:{
-            title:title || video.titlem,
+            title:title || video.title,
             description:description || video.description,
             thumbnail: thumbnailUrl || video.thumbnail
         }
